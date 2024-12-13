@@ -1,18 +1,38 @@
-POST: /api/v1/user/login
+POST: /api/v1/messages/send
 
-REG: 
-{
-    "sdt": "0322222222",
-    "password": "123456789"
+REG 1: 
+{ "messages": [
+	{
+  	  "captions": null,
+  	  "images": [],
+    	  "sender": "Me",
+   	  "text": "mình nuôi tôm kết hợp với trồng lúa" 
+	}
+    ]
 }
+
+
+REG 2: 
+{ "messages": [
+	{
+   		"captions": "mình nuôi tôm kết hợp với trồng lúa mà tôm bị nổi đầu là tai sau",
+    		"images": [
+			{
+				"status": "uploaded",
+				"url": "https://firebasestorage.googleapis"
+			}
+      			],
+    		"sender": "Me",
+    		"text": null
+	}
+    ]
+}
+
+
 
 RES:
 {
-    "message": "Đăng nhập thành công!",
-    "user": {
-        "id": 1,
-        "username": "adtcntt",
-        "created_at": "2024-09-30T15:43:37.316391Z",
-        "department": "Trường CNTT&TT"
-    }
+    "message": "successful",
+    "answer": "=========",
+    "success": True
 }
