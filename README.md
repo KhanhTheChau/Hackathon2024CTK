@@ -3,26 +3,21 @@
 
 ### Technologies Used:
 - Python 3.10
-- Django 4.2
+- Flask 3.1
 
 ### Prepare:
-```bash
-pip install -r requirements.txt
-```
 
 ```bash
-python manage.py makemigrations
-
-python manage.py migrate
+pip install uv
+uv pip install -r requirements.txt
 ```
+
+
 ### Implementation:
-#### Step 1:
 ```bash
 cd backend
+python app.py
 ```
-#### Step 2:
-```bash
-python manage.py runserver
-```
+### Note: file .env and foder models
 
 
