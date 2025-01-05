@@ -1,685 +1,685 @@
-# import os
-# import asyncio
-# from typing import List, Dict, Any, Optional
-# from langchain.prompts import ChatPromptTemplate
-# from langchain.schema import Document
-# from langgraph.graph import StateGraph, END
-# from langgraph.prebuilt import ToolExecutor
-# from langchain.tools import Tool
-# from pydantic import BaseModel, Field
-# from typing import Optional, Dict, List, Union
-# from pydantic import BaseModel, Field, validator
-# from langchain.docstore.document import Document
-# from duckduckgo_search import DDGS
-# from langchain_nvidia_ai_endpoints import ChatNVIDIA
-# from datetime import datetime
-# from tensorflow.keras.models import load_model
-# from typing import Dict
-# from tensorflow.keras.preprocessing import image
-# import numpy as np
-# from classifier.ShrimpDiseaseClassifier import ShrimpDiseaseClassifier
-# import fasttext
+import os
+import asyncio
+from typing import List, Dict, Any, Optional
+from langchain.prompts import ChatPromptTemplate
+from langchain.schema import Document
+from langgraph.graph import StateGraph, END
+from langgraph.prebuilt import ToolExecutor
+from langchain.tools import Tool
+from pydantic import BaseModel, Field
+from typing import Optional, Dict, List, Union
+from pydantic import BaseModel, Field, validator
+from langchain.docstore.document import Document
+from duckduckgo_search import DDGS
+from langchain_nvidia_ai_endpoints import ChatNVIDIA
+from datetime import datetime
+from tensorflow.keras.models import load_model
+from typing import Dict
+from tensorflow.keras.preprocessing import image
+import numpy as np
+from classifier.ShrimpDiseaseClassifier import ShrimpDiseaseClassifier
+import fasttext
 
-# class ConversationTurn(BaseModel):
-#     """
-#     Represents a single turn in the conversation.
-#     """
-#     query: str = Field(description="User's query")
-#     response: str = Field(description="System's response")
-#     timestamp: str = Field(description="ISO format timestamp of the interaction")
-#     context: Optional[Dict] = Field(
-#         default_factory=dict,
-#         description="Additional context from this interaction"
-#     )
+class ConversationTurn(BaseModel):
+    """
+    Represents a single turn in the conversation.
+    """
+    query: str = Field(description="User's query")
+    response: str = Field(description="System's response")
+    timestamp: str = Field(description="ISO format timestamp of the interaction")
+    context: Optional[Dict] = Field(
+        default_factory=dict,
+        description="Additional context from this interaction"
+    )
 
-# class LabeledSearchResult(BaseModel):
-#     label: str
-#     search_results: List[Document]
+class LabeledSearchResult(BaseModel):
+    label: str
+    search_results: List[Document]
 
-# class AgentState(BaseModel):
-#     """
-#     Comprehensive state management for the multi-agent workflow.
-#     """
-#     query: str = Field(description="Original user query", default="")
+class AgentState(BaseModel):
+    """
+    Comprehensive state management for the multi-agent workflow.
+    """
+    query: str = Field(description="Original user query", default="")
 
-#     image_path: Optional[str] = Field(
-#         default=None,
-#         description="Path to the uploaded image for analysis"
-#     )
+    image_path: Optional[str] = Field(
+        default=None,
+        description="Path to the uploaded image for analysis"
+    )
 
-#     routing_type: Optional[str] = Field(
-#         default=None,
-#         description="Type of routing or processing method"
-#     )
+    routing_type: Optional[str] = Field(
+        default=None,
+        description="Type of routing or processing method"
+    )
 
-#     context: List[Document] = Field(
-#         default_factory=list,
-#         description="Contextual documents retrieved for the query"
-#     )
+    context: List[Document] = Field(
+        default_factory=list,
+        description="Contextual documents retrieved for the query"
+    )
 
-#     search_results: List[Document] = Field(
-#         default_factory=list,
-#         description="Web search results related to the query"
-#     )
+    search_results: List[Document] = Field(
+        default_factory=list,
+        description="Web search results related to the query"
+    )
 
-#     image_classification_result: Dict[str, float] = Field(
-#         default_factory=dict,
-#         description="Image classification results with labels and confidence scores"
-#     )
+    image_classification_result: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Image classification results with labels and confidence scores"
+    )
 
-#     text_classification_result: Dict[str, float] = Field(
-#         default_factory=dict,
-#         description="Text classification results with labels and confidence scores (FastText)"
-#     )
+    text_classification_result: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Text classification results with labels and confidence scores (FastText)"
+    )
 
-#     classification_result: Dict[str, float] = Field(
-#         default_factory=dict,
-#         description="Combined classification results with labels and confidence scores"
-#     )
+    classification_result: Dict[str, float] = Field(
+        default_factory=dict,
+        description="Combined classification results with labels and confidence scores"
+    )
 
-#     database_results: Optional[Union[str, Dict, List]] = Field(
-#         default=None,
-#         description="Structured results from database search"
-#     )
+    database_results: Optional[Union[str, Dict, List]] = Field(
+        default=None,
+        description="Structured results from database search"
+    )
 
-#     final_answer: Optional[str] = Field(
-#         default=None,
-#         description="Comprehensive answer generated by the agent"
-#     )
+    final_answer: Optional[str] = Field(
+        default=None,
+        description="Comprehensive answer generated by the agent"
+    )
 
-#     labeled_search_results: Dict[str, List[Document]] = Field(
-#         default_factory=dict,
-#         description="Search results categorized by classification labels"
-#     )
+    labeled_search_results: Dict[str, List[Document]] = Field(
+        default_factory=dict,
+        description="Search results categorized by classification labels"
+    )
 
-#     conversation_history: List[ConversationTurn] = Field(
-#         default_factory=list,
-#         description="List of previous conversation turns"
-#     )
+    conversation_history: List[ConversationTurn] = Field(
+        default_factory=list,
+        description="List of previous conversation turns"
+    )
 
-#     supervisor_decision: Optional[str] = Field(
-#         default=None,
-#         description="Decision made by the supervisor agent"
-#     )
+    supervisor_decision: Optional[str] = Field(
+        default=None,
+        description="Decision made by the supervisor agent"
+    )
 
-#     max_history: int = Field(
-#         default=5,
-#         description="Maximum number of conversation turns to keep"
-#     )
+    max_history: int = Field(
+        default=5,
+        description="Maximum number of conversation turns to keep"
+    )
 
-#     search_requirements: Optional[str] = Field(
-#         default=None,
-#         description="Requirements for additional search"
-#     )
+    search_requirements: Optional[str] = Field(
+        default=None,
+        description="Requirements for additional search"
+    )
 
-#     additional_search_results: Optional[str] = Field(
-#         default=None,
-#         description="Results from additional search"
-#     )
+    additional_search_results: Optional[str] = Field(
+        default=None,
+        description="Results from additional search"
+    )
 
-#     @validator('labeled_search_results', pre=True)
-#     def convert_labeled_search_results(cls, v):
-#         # If a list of dictionaries is passed, convert it to the expected format
-#         if isinstance(v, list):
-#             return {item['label']: item['search_results'] for item in v}
-#         return v
+    @validator('labeled_search_results', pre=True)
+    def convert_labeled_search_results(cls, v):
+        # If a list of dictionaries is passed, convert it to the expected format
+        if isinstance(v, list):
+            return {item['label']: item['search_results'] for item in v}
+        return v
 
-#     def reset(self):
-#         """
-#         Reset the state to its default values while preserving conversation history.
-#         """
-#         # Store current history and max_history
-#         current_history = self.conversation_history
-#         history_limit = self.max_history
+    def reset(self):
+        """
+        Reset the state to its default values while preserving conversation history.
+        """
+        # Store current history and max_history
+        current_history = self.conversation_history
+        history_limit = self.max_history
 
-#         # Reset all fields
-#         for field in self.__fields__:
-#             if field not in ['conversation_history', 'max_history']:
-#                 setattr(self, field, self.__fields__[field].default)
+        # Reset all fields
+        for field in self.__fields__:
+            if field not in ['conversation_history', 'max_history']:
+                setattr(self, field, self.__fields__[field].default)
 
-#         # Restore history
-#         self.conversation_history = current_history
-#         self.max_history = history_limit
+        # Restore history
+        self.conversation_history = current_history
+        self.max_history = history_limit
 
-#     def update_history(self, response: str):
-#         """
-#         Update conversation history with the current interaction.
+    def update_history(self, response: str):
+        """
+        Update conversation history with the current interaction.
 
-#         Args:
-#             response (str): System's response to add to history
-#         """
-#         # Create context dictionary with relevant state information
-#         context = {
-#             "routing_type": self.routing_type,
-#             "has_image": bool(self.image_path),
-#             "classification_results": self.classification_result,
-#             "database_accessed": bool(self.database_results)
-#         }
+        Args:
+            response (str): System's response to add to history
+        """
+        # Create context dictionary with relevant state information
+        context = {
+            "routing_type": self.routing_type,
+            "has_image": bool(self.image_path),
+            "classification_results": self.classification_result,
+            "database_accessed": bool(self.database_results)
+        }
 
-#         # Create new conversation turn
-#         new_turn = ConversationTurn(
-#             query=self.query,
-#             response=response,
-#             timestamp=datetime.now().isoformat(),
-#             context=context
-#         )
+        # Create new conversation turn
+        new_turn = ConversationTurn(
+            query=self.query,
+            response=response,
+            timestamp=datetime.now().isoformat(),
+            context=context
+        )
 
-#         # Add to history
-#         self.conversation_history.append(new_turn)
+        # Add to history
+        self.conversation_history.append(new_turn)
 
-#         # Maintain max history limit
-#         if len(self.conversation_history) > self.max_history:
-#             self.conversation_history = self.conversation_history[-self.max_history:]
+        # Maintain max history limit
+        if len(self.conversation_history) > self.max_history:
+            self.conversation_history = self.conversation_history[-self.max_history:]
 
-#     def get_formatted_history(self) -> str:
-#         """
-#         Get formatted conversation history for use in prompts.
+    def get_formatted_history(self) -> str:
+        """
+        Get formatted conversation history for use in prompts.
 
-#         Returns:
-#             str: Formatted conversation history
-#         """
-#         if not self.conversation_history:
-#             return "Không có lịch sử trò chuyện."
+        Returns:
+            str: Formatted conversation history
+        """
+        if not self.conversation_history:
+            return "Không có lịch sử trò chuyện."
 
-#         formatted_history = "Các cuộc trò chuyện gần đây:\n"
-#         for i, turn in enumerate(self.conversation_history, 1):
-#             formatted_history += (
-#                 f"\n{i}. Thời gian: {turn.timestamp}\n"
-#                 f"   Người dùng: {turn.query}\n"
-#                 f"   Hệ thống: {turn.response[:200]}...\n"
-#                 f"   Ngữ cảnh: {self._format_context(turn.context)}\n"
-#             )
-#         return formatted_history
+        formatted_history = "Các cuộc trò chuyện gần đây:\n"
+        for i, turn in enumerate(self.conversation_history, 1):
+            formatted_history += (
+                f"\n{i}. Thời gian: {turn.timestamp}\n"
+                f"   Người dùng: {turn.query}\n"
+                f"   Hệ thống: {turn.response[:200]}...\n"
+                f"   Ngữ cảnh: {self._format_context(turn.context)}\n"
+            )
+        return formatted_history
 
-#     def _format_context(self, context: Dict) -> str:
-#         """
-#         Format context information for display.
+    def _format_context(self, context: Dict) -> str:
+        """
+        Format context information for display.
 
-#         Args:
-#             context (Dict): Context dictionary from conversation turn
+        Args:
+            context (Dict): Context dictionary from conversation turn
 
-#         Returns:
-#             str: Formatted context string
-#         """
-#         if not context:
-#             return "Không có thông tin ngữ cảnh"
+        Returns:
+            str: Formatted context string
+        """
+        if not context:
+            return "Không có thông tin ngữ cảnh"
 
-#         context_parts = []
-#         if context.get("routing_type"):
-#             context_parts.append(f"Loại xử lý: {context['routing_type']}")
-#         if context.get("has_image"):
-#             context_parts.append("Có hình ảnh")
-#         if context.get("classification_results"):
-#             results = context["classification_results"]
-#             classifications = [f"{label}: {conf:.2f}" for label, conf in results.items()]
-#             context_parts.append(f"Phân loại: {', '.join(classifications)}")
-#         if context.get("database_accessed"):
-#             context_parts.append("Đã truy cập CSDL")
+        context_parts = []
+        if context.get("routing_type"):
+            context_parts.append(f"Loại xử lý: {context['routing_type']}")
+        if context.get("has_image"):
+            context_parts.append("Có hình ảnh")
+        if context.get("classification_results"):
+            results = context["classification_results"]
+            classifications = [f"{label}: {conf:.2f}" for label, conf in results.items()]
+            context_parts.append(f"Phân loại: {', '.join(classifications)}")
+        if context.get("database_accessed"):
+            context_parts.append("Đã truy cập CSDL")
 
-#         return " | ".join(context_parts) if context_parts else "Không có thông tin ngữ cảnh"
+        return " | ".join(context_parts) if context_parts else "Không có thông tin ngữ cảnh"
 
-#     def is_empty(self) -> bool:
-#         """
-#         Check if the state is essentially empty (excluding history).
-#         """
-#         return (
-#             not self.query and
-#             not self.image_path and
-#             not self.context and
-#             not self.search_results and
-#             not self.image_classification_result and
-#             not self.text_classification_result and
-#             not self.classification_result and
-#             not self.database_results and
-#             not self.final_answer and
-#             not self.labeled_search_results
-#         )
+    def is_empty(self) -> bool:
+        """
+        Check if the state is essentially empty (excluding history).
+        """
+        return (
+            not self.query and
+            not self.image_path and
+            not self.context and
+            not self.search_results and
+            not self.image_classification_result and
+            not self.text_classification_result and
+            not self.classification_result and
+            not self.database_results and
+            not self.final_answer and
+            not self.labeled_search_results
+        )
 
-# class MultiAgentShrimpRetrievalSystem:
-#     def __init__(self,
-#                  contextual_retriever,
-#                  llm_model: str = "gemini-1.5-pro",
-#                  yolo_model_path: str = "./models/yolo/best_yolo.pt",
-#                  cnn_model_path: str = "./models/cnn/VGG16.keras",
-#                  fasttext_model_path: str = "./models/fasttext/fasttext_model.bin",
-#                  max_history: int = 5
-#                  ):
+class MultiAgentShrimpRetrievalSystem:
+    def __init__(self,
+                 contextual_retriever,
+                 llm_model: str = "gemini-1.5-pro",
+                 yolo_model_path: str = "./models/yolo/best_yolo.pt",
+                 cnn_model_path: str = "./models/cnn/VGG16.keras",
+                 fasttext_model_path: str = "./models/fasttext/fasttext_model.bin",
+                 max_history: int = 5
+                 ):
         
-#         self.llm = ChatNVIDIA(model="meta/llama-3.1-405b-instruct")
-#         self.retriever = contextual_retriever
-#         # Initialize specialized agents
-#         self.semantic_router = self._create_semantic_router()
-#         self.supervisor_agent = self._create_supervisor_agent()
-#         self.searcher_agent = self._create_searcher_agent()
-#         self.classifier_agent = self._create_classifier_agent(cnn_model_path, fasttext_model_path, yolo_model_path)
-
-#         # Create the optimized workflow graph
-#         self.workflow = self._create_workflow()
-
-#         # Initialize default state
-#         self.default_state = AgentState(max_history=max_history)
-
-# # <==================================CREATE-AGENT==================================>
-
-#     def _create_semantic_router(self):
-#         """
-#         Create an enhanced semantic router that also detects disease descriptions.
-#         """
-#         semantic_router_prompt = ChatPromptTemplate.from_template("""
-#         Bạn là một bộ định tuyến ngữ nghĩa chuyên phân tích truy vấn liên quan đến bệnh tôm.
-
-#         Lịch sử trò chuyện:
-#         {history}
-
-#         image_path = {image_path}
-
-#         Nhiệm vụ: Phân tích truy vấn và trả về ĐÚNG MỘT từ khóa:
-#         - "disease_image" nếu truy vấn VỀ ảnh bệnh tôm (image_path != None)
-#         - "disease_description" nếu truy vấn MÔ TẢ triệu chứng hoặc dấu hiệu bệnh tôm
-#         - "disease_query" nếu truy vấn HỎI VỀ bệnh tôm nhưng không có ảnh bệnh tôm (image_path == None) và không mô tả triệu chứng
-#         - "chitchat" nếu truy vấn KHÔNG liên quan đến bệnh tôm
-
-#         Truy vấn hiện tại: {query}
-
-#         Câu trả lời của bạn chỉ được là một trong ba từ khóa trên:
-#         """)
-
-#         return semantic_router_prompt
-
-#     def _create_supervisor_agent(self):
-#         """
-#         Create optimized supervisor agent for query analysis.
-#         """
-#         supervisor_prompt = ChatPromptTemplate.from_template("""
-#         Bạn là một giám sát viên thông minh chuyên phân tích truy vấn về bệnh tôm.
-
-#         Lịch sử trò chuyện:
-#         {history}
-
-#         Nhiệm vụ: Phân tích thông tin và quyết định hướng xử lý tiếp theo.
-#         Trả về MỘT trong các từ khóa:
-#         - "answer" nếu thông tin ĐỦ để trả lời
-#         - "search" nếu CẦN tìm kiếm thêm
-
-#         Truy vấn: {query}
-#         Thông tin hiện có: {available_info}
-
-#         Quyết định của bạn (chỉ trả về một từ 'answer' hoặc 'search'):
-#         """)
-
-#         return supervisor_prompt
-
-#     def _create_searcher_agent(self):
-#         """
-#         Create optimized searcher agent.
-#         """
-#         searcher_prompt = ChatPromptTemplate.from_template("""
-#         Bạn là chuyên gia tìm kiếm thông tin về bệnh tôm.
-
-#         Truy vấn: {query}
-#         Thông tin cần tìm: {search_requirements}
-
-#         Tổng hợp thông tin tìm được, tập trung vào:
-#         1. Độ chính xác và tin cậy
-#         2. Mức độ liên quan với truy vấn
-#         3. Tính thực tiễn trong điều trị
-
-#         Tổng hợp thông tin:
-#         """)
-
-#         return searcher_prompt
-
-#     def _create_classifier_agent(self, cnn_path, fasttext_path, yolo_model_path):
-#         """
-#         Create optimized classifier agents.
-#         """
-#         img_classifier = ShrimpDiseaseClassifier(model_path=cnn_path, yolo_model_path=yolo_model_path)
-#         text_classifier = fasttext.load_model(fasttext_path)
-#         return (img_classifier, text_classifier)
-
-# # <==================================AGENT-WORKFLOW==================================>
-
-#     def _create_workflow(self):
-#         """
-#         Create optimized workflow with all agents.
-#         """
-#         workflow = StateGraph(AgentState)
-
-#         # Add nodes
-#         workflow.add_node("semantic_router", self._run_semantic_router)
-#         workflow.add_node("classifier", self._run_classifier)
-#         workflow.add_node("retriever", self._run_retriever)
-#         workflow.add_node("supervisor", self._run_supervisor)
-#         workflow.add_node("searcher", self._run_searcher)
-#         workflow.add_node("answer_generator", self._generate_final_answer)
-#         workflow.add_node("chitchat_generator", self._generate_chitchat_answer)
-
-#         # Define optimized routing
-#         workflow.add_conditional_edges(
-#             "semantic_router",
-#             self._route_query_type,
-#             {
-#                 "disease_image": "classifier",
-#                 "disease_description": "classifier",
-#                 "disease_query": "retriever",
-#                 "chitchat": "chitchat_generator"
-#             }
-#         )
-
-#         # Define supervisor routing
-#         workflow.add_conditional_edges(
-#             "supervisor",
-#             self._route_supervisor_decision,
-#             {
-#                 "search": "searcher",
-#                 "answer": "answer_generator"
-#             }
-#         )
-
-#         # Add remaining edges
-#         workflow.add_edge("classifier", "retriever")
-#         workflow.add_edge("retriever", "supervisor")
-#         workflow.add_edge("searcher", "answer_generator")
-#         workflow.add_edge("chitchat_generator", END)
-#         workflow.add_edge("answer_generator", END)
-
-#         workflow.set_entry_point("semantic_router")
-#         return workflow.compile()
-
-#     def _route_query_type(self, state: AgentState):
-#         return state.routing_type
-
-#     def _route_supervisor_decision(self, state: AgentState):
-#         return state.supervisor_decision
-
-# # <==================================RUN-AGENT==================================>
-
-#     def _run_semantic_router(self, state: AgentState):
-#         print(f"🚦 SEMANTIC ROUTER: Processing at {datetime.now().isoformat()}")
-#         semantic_messages = self.semantic_router.format_messages(
-#             query=state.query,
-#             image_path=state.image_path,
-#             history=state.get_formatted_history()
-#         )
-#         semantic_response = self.llm.invoke(semantic_messages)
-#         state.routing_type = semantic_response.content.lower().strip()
-#         print(f"Routing type: {state.routing_type}")
-#         return state
-
-#     def _run_classifier(self, state: AgentState):
-#         print(f"👨‍⚕️ DISEASES ANALYZER: Processing at {datetime.now().isoformat()}")
-#         try:
-#             img_classifier, text_classifier = self.classifier_agent[0], self.classifier_agent[1]
-#             state.classification_result = {}
-
-#             # Process image if provided
-#             if state.image_path:
-#                 img_results = img_classifier.predict(state.image_path)
-#                 if isinstance(img_results, tuple):
-#                     img_results = {
-#                         label[0]: float(confidence)  # Removed .item()
-#                         for label, confidence in zip(img_results[0], img_results[1])
-#                     }
-#                 state.image_classification_result.update(img_results)
-
-#             # Process text for disease descriptions
-#             if state.routing_type == "disease_description":
-#                 text_results = text_classifier.predict(state.query)
-#                 if isinstance(text_results, tuple):
-#                     text_results = {
-#                         label.replace('__label__', ''): float(confidence)  # Removed .item()
-#                         for label, confidence in zip(text_results[0], text_results[1])
-#                     }
-#                 state.text_classification_result.update(text_results)
-
-#             print(state.image_classification_result)
-#             print(state.text_classification_result)
-
-#             # Combine results
-#             combined_results = {}
-#             all_labels = set(state.image_classification_result.keys()).union(set(state.text_classification_result.keys()))
-#             for label in all_labels:
-#                 img_conf = state.image_classification_result.get(label, 0)
-#                 text_conf = state.text_classification_result.get(label, 0)
-
-#                 if img_conf > 0 and text_conf > 0:
-#                     combined_conf = 0.6 * img_conf + 0.4 * text_conf
-#                 elif img_conf > 0:
-#                     combined_conf = img_conf
-#                 else:
-#                     combined_conf = text_conf
-
-#                 combined_results[label] = combined_conf
-
-#             state.classification_result = combined_results
-#             print(combined_results)
-#             return state
-
-#         except Exception as e:
-#             print(f"❌ Classification error: {e}")
-#             state.classification_result = {}
-#             return state
-
-#     def _run_retriever(self, state: AgentState):
-#         print(f"🔍 RETRIEVER: Processing at {datetime.now().isoformat()}")
-#         """
-#         Run optimized retrieval process.
-#         """
-#         try:
-#             search_results = []
-
-#             if state.classification_result:
-#                 # Use classification results for targeted search
-#                 for label, confidence in state.classification_result.items():
-#                     query = f"bệnh {label} ở tôm | triệu chứng | điều trị"
-#                     results = self.retriever.retrieve_documents(query)
-#                     search_results.extend(results)
-#             else:
-#                 # Direct search for general disease queries
-#                 results = self.retriever.retrieve_documents(state.query)
-#                 search_results.extend(results)
-
-#             state.search_results = search_results
-#             # print(state.search_results)
-#             return state
-
-#         except Exception as e:
-#             print(f"❌ Retrieval error: {e}")
-#             state.search_results = []
-#             return state
-
-#     def _run_supervisor(self, state: AgentState):
-#         print(f"🧐 SUPERVISOR: Processing at {datetime.now().isoformat()}")
-#         """
-#         Run supervisor for decision making.
-#         """
-#         available_info = {
-#             "classification": self._format_classification_results(state.classification_result),
-#             "search_results": self._format_search_results(state.search_results),
-#             "additional_search_results": state.additional_search_results or "Không có thông tin bổ sung",
-#         }
-
-#         supervisor_messages = self.supervisor_agent.format_messages(
-#             query=state.query,
-#             history=state.get_formatted_history(),
-#             available_info=available_info
-#         )
-#         # print(supervisor_messages)
-#         try:
-#             response = self.llm.invoke(supervisor_messages)
-#             state.supervisor_decision = response.content.lower().strip()
-#             print(f"Supervisor decision: {state.supervisor_decision}")
-#             return state
-
-#         except Exception as e:
-#             print(f"❌ Supervisor error: {e}")
-#             state.supervisor_decision = "search"  # Default to search on error
-#             return state
-
-#     def _run_searcher(self, state: 'AgentState'):
-#         print(f"🌐 SEARCHER: Processing at {datetime.now().isoformat()}")
-#         """
-#         Run optimized searcher for additional information.
-#         """
-#         if not state.search_requirements:
-#             state.search_requirements = "thông tin chung về bệnh và cách điều trị"
-
-#         searcher_messages = self.searcher_agent.format_messages(
-#             query=state.query,
-#             search_requirements=state.search_requirements
-#         )
-
-#         max_retries = 3
-#         retry_delay = 2  # Initial delay in seconds
-
-#         for attempt in range(max_retries):
-#             try:
-#                 search_tool = DDGS()
-#                 results = [r for r in search_tool.text(state.query, max_results=5)]
-#                 state.additional_search_results = "\n".join([str(r) for r in results])
-#                 print(f"🔎 Web search results for '{state.query}'")
-#                 print(state.additional_search_results)
-#                 return state
-
-#             except Exception as e:
-#                 error_message = str(e)
-#                 if "Ratelimit" in error_message:
-#                     print(f"❌ Search error: {error_message}. Retrying in {retry_delay} seconds...")
-#                     time.sleep(retry_delay)
-#                     retry_delay *= 2  # Exponential backoff
-#                 else:
-#                     print(f"❌ Search error: {error_message}")
-#                     state.additional_search_results = ""
-#                     return state
-
-#         print(f"❌ Search error: Exceeded maximum retries.")
-#         state.additional_search_results = ""
-#         return state
-
-#     def _generate_final_answer(self, state: AgentState):
-#         print(f"📋 ANSWER GENERATOR: Processing at {datetime.now().isoformat()}")
-#         """
-#         Generate optimized response.
-#         """
-#         answer_prompt = ChatPromptTemplate.from_template("""
-#         Bạn là chuyên gia tư vấn về bệnh tôm.
-
-#         Lịch sử trò chuyện:
-#         {history}
-
-#         Truy vấn: {query}
-#         Kết quả phân loại: {classification_results}
-#         Thông tin tham khảo: {search_results}
-#         Thông tin bổ sung: {additional_info}
-
-#         Yêu cầu:
-#         1. Trả lời đúng trọng tâm
-#         2. Ưu tiên thông tin từ kết quả tìm kiếm
-#         3. Nêu rõ nguồn thông tin nếu có (Nếu nguồn có đính kèm link phải nêu link ra, Nếu chỉ lấy từ thông tin tham khảo thì không cần ghi nguồn)
-#         4. Kết nối với thông tin từ lịch sử trò chuyện nếu phù hợp
-#         5. Diễn đạt dễ hiểu, khoa học và chính xác
-#         Trả lời:
-#         """)
-
-#         messages = answer_prompt.format_messages(
-#             query=state.query,
-#             history=state.get_formatted_history(),
-#             classification_results=self._format_classification_results(state.classification_result),
-#             search_results=self._format_search_results(state.search_results),
-#             additional_info=state.additional_search_results or "Không có thông tin bổ sung"
-#         )
-#         # print(messages)
-#         try:
-#             response = ""
-#             for chunk in self.llm.stream(messages):
-#                 if hasattr(chunk, 'content'):
-#                     print(chunk.content, end='', flush=True)
-#                     response += chunk.content
-
-#             state.final_answer = response.strip()
-#             state.update_history(response)
-#             return state
-
-#         except Exception as e:
-#             print(f"❌ Answer generation error: {e}")
-#             error_message = "Xin lỗi, không thể tạo câu trả lời do lỗi hệ thống."
-#             state.final_answer = error_message
-#             state.update_history(error_message)
-#             return state
-
-#     def _generate_chitchat_answer(self, state: AgentState):
-#         print(f"📋 ANSWER GENERATOR: ChitChat answer at {datetime.now().isoformat()}")
-#         """
-#         Generate simple chitchat response.
-#         """
-#         chitchat_prompt = ChatPromptTemplate.from_template("""
-#         Bạn là chuyên gia về bệnh tôm.
-#         Trả lời ngắn gọn, thân thiện cho câu hỏi: {query}
-#         """)
-
-#         messages = chitchat_prompt.format_messages(query=state.query)
-
-#         try:
-#             response = ""
-#             for chunk in self.llm.stream(messages):
-#                 if hasattr(chunk, 'content'):
-#                     print(chunk.content, end='', flush=True)
-#                     response += chunk.content
-
-#             state.final_answer = response.strip()
-#             state.update_history(response)
-#             return state
-
-#         except Exception as e:
-#             print(f"❌ Chitchat generation error: {e}")
-#             error_message = "Xin lỗi, không thể tạo câu trả lời do lỗi hệ thống."
-#             state.final_answer = error_message
-#             state.update_history(error_message)
-#             return state
-
-#     @staticmethod
-#     def _format_classification_results(results: Dict[str, float]) -> str:
-#         """
-#         Format classification results concisely.
-#         """
-#         if not results:
-#             return "Không có kết quả phân loại."
-
-#         return "\n".join(f"- {label}: {confidence:.2f}"
-#                         for label, confidence in results.items())
-
-#     @staticmethod
-#     def _format_search_results(results: List) -> str:
-#         """
-#         Format search results concisely.
-#         """
-#         if not results:
-#             return "Không có kết quả tìm kiếm."
-
-#         formatted_results = []
-#         for doc in results[:3]:  # Limit to top 3 results
-#             formatted_results.append(f"{doc.page_content.strip()}")
-
-#         return "\n\n".join(formatted_results)
-
-#     def process_query(self, query: str, image_path: Optional[str] = None):
-#         """
-#         Process query with optimized workflow.
-#         """
-#         print(f"🤖 PROCESS QUERY: Starting at {datetime.now().isoformat()}")
-#         # Create new state from default
-#         if isinstance(self.default_state, dict):
-#             current_state = AgentState(**self.default_state)
-#         else:
-#             current_state = self.default_state.model_copy(deep=True)
-#         current_state.query = query
-#         current_state.image_path = image_path
-
-#         # Execute workflow
-#         result = self.workflow.invoke(current_state)
-
-#         # Update default state
-#         self.default_state = result.copy()
-
-#         print(f"\n🤖 PROCESS QUERY: Completed at {datetime.now().isoformat()}")
-#         return result['final_answer']
+        self.llm = ChatNVIDIA(model="meta/llama-3.1-405b-instruct")
+        self.retriever = contextual_retriever
+        # Initialize specialized agents
+        self.semantic_router = self._create_semantic_router()
+        self.supervisor_agent = self._create_supervisor_agent()
+        self.searcher_agent = self._create_searcher_agent()
+        self.classifier_agent = self._create_classifier_agent(cnn_model_path, fasttext_model_path, yolo_model_path)
+
+        # Create the optimized workflow graph
+        self.workflow = self._create_workflow()
+
+        # Initialize default state
+        self.default_state = AgentState(max_history=max_history)
+
+# <==================================CREATE-AGENT==================================>
+
+    def _create_semantic_router(self):
+        """
+        Create an enhanced semantic router that also detects disease descriptions.
+        """
+        semantic_router_prompt = ChatPromptTemplate.from_template("""
+        Bạn là một bộ định tuyến ngữ nghĩa chuyên phân tích truy vấn liên quan đến bệnh tôm.
+
+        Lịch sử trò chuyện:
+        {history}
+
+        image_path = {image_path}
+
+        Nhiệm vụ: Phân tích truy vấn và trả về ĐÚNG MỘT từ khóa:
+        - "disease_image" nếu truy vấn VỀ ảnh bệnh tôm (image_path != None)
+        - "disease_description" nếu truy vấn MÔ TẢ triệu chứng hoặc dấu hiệu bệnh tôm
+        - "disease_query" nếu truy vấn HỎI VỀ bệnh tôm nhưng không có ảnh bệnh tôm (image_path == None) và không mô tả triệu chứng
+        - "chitchat" nếu truy vấn KHÔNG liên quan đến bệnh tôm
+
+        Truy vấn hiện tại: {query}
+
+        Câu trả lời của bạn chỉ được là một trong ba từ khóa trên:
+        """)
+
+        return semantic_router_prompt
+
+    def _create_supervisor_agent(self):
+        """
+        Create optimized supervisor agent for query analysis.
+        """
+        supervisor_prompt = ChatPromptTemplate.from_template("""
+        Bạn là một giám sát viên thông minh chuyên phân tích truy vấn về bệnh tôm.
+
+        Lịch sử trò chuyện:
+        {history}
+
+        Nhiệm vụ: Phân tích thông tin và quyết định hướng xử lý tiếp theo.
+        Trả về MỘT trong các từ khóa:
+        - "answer" nếu thông tin ĐỦ để trả lời
+        - "search" nếu CẦN tìm kiếm thêm
+
+        Truy vấn: {query}
+        Thông tin hiện có: {available_info}
+
+        Quyết định của bạn (chỉ trả về một từ 'answer' hoặc 'search'):
+        """)
+
+        return supervisor_prompt
+
+    def _create_searcher_agent(self):
+        """
+        Create optimized searcher agent.
+        """
+        searcher_prompt = ChatPromptTemplate.from_template("""
+        Bạn là chuyên gia tìm kiếm thông tin về bệnh tôm.
+
+        Truy vấn: {query}
+        Thông tin cần tìm: {search_requirements}
+
+        Tổng hợp thông tin tìm được, tập trung vào:
+        1. Độ chính xác và tin cậy
+        2. Mức độ liên quan với truy vấn
+        3. Tính thực tiễn trong điều trị
+
+        Tổng hợp thông tin:
+        """)
+
+        return searcher_prompt
+
+    def _create_classifier_agent(self, cnn_path, fasttext_path, yolo_model_path):
+        """
+        Create optimized classifier agents.
+        """
+        img_classifier = ShrimpDiseaseClassifier(model_path=cnn_path, yolo_model_path=yolo_model_path)
+        text_classifier = fasttext.load_model(fasttext_path)
+        return (img_classifier, text_classifier)
+
+# <==================================AGENT-WORKFLOW==================================>
+
+    def _create_workflow(self):
+        """
+        Create optimized workflow with all agents.
+        """
+        workflow = StateGraph(AgentState)
+
+        # Add nodes
+        workflow.add_node("semantic_router", self._run_semantic_router)
+        workflow.add_node("classifier", self._run_classifier)
+        workflow.add_node("retriever", self._run_retriever)
+        workflow.add_node("supervisor", self._run_supervisor)
+        workflow.add_node("searcher", self._run_searcher)
+        workflow.add_node("answer_generator", self._generate_final_answer)
+        workflow.add_node("chitchat_generator", self._generate_chitchat_answer)
+
+        # Define optimized routing
+        workflow.add_conditional_edges(
+            "semantic_router",
+            self._route_query_type,
+            {
+                "disease_image": "classifier",
+                "disease_description": "classifier",
+                "disease_query": "retriever",
+                "chitchat": "chitchat_generator"
+            }
+        )
+
+        # Define supervisor routing
+        workflow.add_conditional_edges(
+            "supervisor",
+            self._route_supervisor_decision,
+            {
+                "search": "searcher",
+                "answer": "answer_generator"
+            }
+        )
+
+        # Add remaining edges
+        workflow.add_edge("classifier", "retriever")
+        workflow.add_edge("retriever", "supervisor")
+        workflow.add_edge("searcher", "answer_generator")
+        workflow.add_edge("chitchat_generator", END)
+        workflow.add_edge("answer_generator", END)
+
+        workflow.set_entry_point("semantic_router")
+        return workflow.compile()
+
+    def _route_query_type(self, state: AgentState):
+        return state.routing_type
+
+    def _route_supervisor_decision(self, state: AgentState):
+        return state.supervisor_decision
+
+# <==================================RUN-AGENT==================================>
+
+    def _run_semantic_router(self, state: AgentState):
+        print(f"🚦 SEMANTIC ROUTER: Processing at {datetime.now().isoformat()}")
+        semantic_messages = self.semantic_router.format_messages(
+            query=state.query,
+            image_path=state.image_path,
+            history=state.get_formatted_history()
+        )
+        semantic_response = self.llm.invoke(semantic_messages)
+        state.routing_type = semantic_response.content.lower().strip()
+        print(f"Routing type: {state.routing_type}")
+        return state
+
+    def _run_classifier(self, state: AgentState):
+        print(f"👨‍⚕️ DISEASES ANALYZER: Processing at {datetime.now().isoformat()}")
+        try:
+            img_classifier, text_classifier = self.classifier_agent[0], self.classifier_agent[1]
+            state.classification_result = {}
+
+            # Process image if provided
+            if state.image_path:
+                img_results = img_classifier.predict(state.image_path)
+                if isinstance(img_results, tuple):
+                    img_results = {
+                        label[0]: float(confidence)  # Removed .item()
+                        for label, confidence in zip(img_results[0], img_results[1])
+                    }
+                state.image_classification_result.update(img_results)
+
+            # Process text for disease descriptions
+            if state.routing_type == "disease_description":
+                text_results = text_classifier.predict(state.query)
+                if isinstance(text_results, tuple):
+                    text_results = {
+                        label.replace('__label__', ''): float(confidence)  # Removed .item()
+                        for label, confidence in zip(text_results[0], text_results[1])
+                    }
+                state.text_classification_result.update(text_results)
+
+            print(state.image_classification_result)
+            print(state.text_classification_result)
+
+            # Combine results
+            combined_results = {}
+            all_labels = set(state.image_classification_result.keys()).union(set(state.text_classification_result.keys()))
+            for label in all_labels:
+                img_conf = state.image_classification_result.get(label, 0)
+                text_conf = state.text_classification_result.get(label, 0)
+
+                if img_conf > 0 and text_conf > 0:
+                    combined_conf = 0.6 * img_conf + 0.4 * text_conf
+                elif img_conf > 0:
+                    combined_conf = img_conf
+                else:
+                    combined_conf = text_conf
+
+                combined_results[label] = combined_conf
+
+            state.classification_result = combined_results
+            print(combined_results)
+            return state
+
+        except Exception as e:
+            print(f"❌ Classification error: {e}")
+            state.classification_result = {}
+            return state
+
+    def _run_retriever(self, state: AgentState):
+        print(f"🔍 RETRIEVER: Processing at {datetime.now().isoformat()}")
+        """
+        Run optimized retrieval process.
+        """
+        try:
+            search_results = []
+
+            if state.classification_result:
+                # Use classification results for targeted search
+                for label, confidence in state.classification_result.items():
+                    query = f"bệnh {label} ở tôm | triệu chứng | điều trị"
+                    results = self.retriever.retrieve_documents(query)
+                    search_results.extend(results)
+            else:
+                # Direct search for general disease queries
+                results = self.retriever.retrieve_documents(state.query)
+                search_results.extend(results)
+
+            state.search_results = search_results
+            # print(state.search_results)
+            return state
+
+        except Exception as e:
+            print(f"❌ Retrieval error: {e}")
+            state.search_results = []
+            return state
+
+    def _run_supervisor(self, state: AgentState):
+        print(f"🧐 SUPERVISOR: Processing at {datetime.now().isoformat()}")
+        """
+        Run supervisor for decision making.
+        """
+        available_info = {
+            "classification": self._format_classification_results(state.classification_result),
+            "search_results": self._format_search_results(state.search_results),
+            "additional_search_results": state.additional_search_results or "Không có thông tin bổ sung",
+        }
+
+        supervisor_messages = self.supervisor_agent.format_messages(
+            query=state.query,
+            history=state.get_formatted_history(),
+            available_info=available_info
+        )
+        # print(supervisor_messages)
+        try:
+            response = self.llm.invoke(supervisor_messages)
+            state.supervisor_decision = response.content.lower().strip()
+            print(f"Supervisor decision: {state.supervisor_decision}")
+            return state
+
+        except Exception as e:
+            print(f"❌ Supervisor error: {e}")
+            state.supervisor_decision = "search"  # Default to search on error
+            return state
+
+    def _run_searcher(self, state: 'AgentState'):
+        print(f"🌐 SEARCHER: Processing at {datetime.now().isoformat()}")
+        """
+        Run optimized searcher for additional information.
+        """
+        if not state.search_requirements:
+            state.search_requirements = "thông tin chung về bệnh và cách điều trị"
+
+        searcher_messages = self.searcher_agent.format_messages(
+            query=state.query,
+            search_requirements=state.search_requirements
+        )
+
+        max_retries = 3
+        retry_delay = 2  # Initial delay in seconds
+
+        for attempt in range(max_retries):
+            try:
+                search_tool = DDGS()
+                results = [r for r in search_tool.text(state.query, max_results=5)]
+                state.additional_search_results = "\n".join([str(r) for r in results])
+                print(f"🔎 Web search results for '{state.query}'")
+                print(state.additional_search_results)
+                return state
+
+            except Exception as e:
+                error_message = str(e)
+                if "Ratelimit" in error_message:
+                    print(f"❌ Search error: {error_message}. Retrying in {retry_delay} seconds...")
+                    time.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+                else:
+                    print(f"❌ Search error: {error_message}")
+                    state.additional_search_results = ""
+                    return state
+
+        print(f"❌ Search error: Exceeded maximum retries.")
+        state.additional_search_results = ""
+        return state
+
+    def _generate_final_answer(self, state: AgentState):
+        print(f"📋 ANSWER GENERATOR: Processing at {datetime.now().isoformat()}")
+        """
+        Generate optimized response.
+        """
+        answer_prompt = ChatPromptTemplate.from_template("""
+        Bạn là chuyên gia tư vấn về bệnh tôm.
+
+        Lịch sử trò chuyện:
+        {history}
+
+        Truy vấn: {query}
+        Kết quả phân loại: {classification_results}
+        Thông tin tham khảo: {search_results}
+        Thông tin bổ sung: {additional_info}
+
+        Yêu cầu:
+        1. Trả lời đúng trọng tâm
+        2. Ưu tiên thông tin từ kết quả tìm kiếm
+        3. Nêu rõ nguồn thông tin nếu có (Nếu nguồn có đính kèm link phải nêu link ra, Nếu chỉ lấy từ thông tin tham khảo thì không cần ghi nguồn)
+        4. Kết nối với thông tin từ lịch sử trò chuyện nếu phù hợp
+        5. Diễn đạt dễ hiểu, khoa học và chính xác
+        Trả lời:
+        """)
+
+        messages = answer_prompt.format_messages(
+            query=state.query,
+            history=state.get_formatted_history(),
+            classification_results=self._format_classification_results(state.classification_result),
+            search_results=self._format_search_results(state.search_results),
+            additional_info=state.additional_search_results or "Không có thông tin bổ sung"
+        )
+        # print(messages)
+        try:
+            response = ""
+            for chunk in self.llm.stream(messages):
+                if hasattr(chunk, 'content'):
+                    print(chunk.content, end='', flush=True)
+                    response += chunk.content
+
+            state.final_answer = response.strip()
+            state.update_history(response)
+            return state
+
+        except Exception as e:
+            print(f"❌ Answer generation error: {e}")
+            error_message = "Xin lỗi, không thể tạo câu trả lời do lỗi hệ thống."
+            state.final_answer = error_message
+            state.update_history(error_message)
+            return state
+
+    def _generate_chitchat_answer(self, state: AgentState):
+        print(f"📋 ANSWER GENERATOR: ChitChat answer at {datetime.now().isoformat()}")
+        """
+        Generate simple chitchat response.
+        """
+        chitchat_prompt = ChatPromptTemplate.from_template("""
+        Bạn là chuyên gia về bệnh tôm.
+        Trả lời ngắn gọn, thân thiện cho câu hỏi: {query}
+        """)
+
+        messages = chitchat_prompt.format_messages(query=state.query)
+
+        try:
+            response = ""
+            for chunk in self.llm.stream(messages):
+                if hasattr(chunk, 'content'):
+                    print(chunk.content, end='', flush=True)
+                    response += chunk.content
+
+            state.final_answer = response.strip()
+            state.update_history(response)
+            return state
+
+        except Exception as e:
+            print(f"❌ Chitchat generation error: {e}")
+            error_message = "Xin lỗi, không thể tạo câu trả lời do lỗi hệ thống."
+            state.final_answer = error_message
+            state.update_history(error_message)
+            return state
+
+    @staticmethod
+    def _format_classification_results(results: Dict[str, float]) -> str:
+        """
+        Format classification results concisely.
+        """
+        if not results:
+            return "Không có kết quả phân loại."
+
+        return "\n".join(f"- {label}: {confidence:.2f}"
+                        for label, confidence in results.items())
+
+    @staticmethod
+    def _format_search_results(results: List) -> str:
+        """
+        Format search results concisely.
+        """
+        if not results:
+            return "Không có kết quả tìm kiếm."
+
+        formatted_results = []
+        for doc in results[:3]:  # Limit to top 3 results
+            formatted_results.append(f"{doc.page_content.strip()}")
+
+        return "\n\n".join(formatted_results)
+
+    def process_query(self, query: str, image_path: Optional[str] = None):
+        """
+        Process query with optimized workflow.
+        """
+        print(f"🤖 PROCESS QUERY: Starting at {datetime.now().isoformat()}")
+        # Create new state from default
+        if isinstance(self.default_state, dict):
+            current_state = AgentState(**self.default_state)
+        else:
+            current_state = self.default_state.model_copy(deep=True)
+        current_state.query = query
+        current_state.image_path = image_path
+
+        # Execute workflow
+        result = self.workflow.invoke(current_state)
+
+        # Update default state
+        self.default_state = result.copy()
+
+        print(f"\n🤖 PROCESS QUERY: Completed at {datetime.now().isoformat()}")
+        return result['final_answer']
